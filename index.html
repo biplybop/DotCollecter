@@ -21,7 +21,7 @@
 	var maxSpeed = 10;
 	var minSpeed = 10;
 	var invCtrl = false;
-	var angleCtrl = 5;
+	var angleCtrl = 10;
 	
 	function mode0()
 	{
@@ -30,7 +30,7 @@
 		maxSpeed = 8;
 		minSpeed = 10;
 		invCtrl = false;
-		angleCtrl = 5;
+		angleCtrl = 10;
 	}
 	
 	function mode0r()
@@ -40,7 +40,7 @@
 		maxSpeed = 8;
 		minSpeed = 10;
 		invCtrl = true;
-		angleCtrl = 5;
+		angleCtrl = 10;
 	}
 	
 	function mode1()
@@ -50,7 +50,7 @@
 		maxSpeed = 5;
 		minSpeed = 10;
 		invCtrl = false;
-		angleCtrl = 5;
+		angleCtrl = 10;
 	}
 	
 	function mode2()
@@ -60,7 +60,7 @@
 		maxSpeed = 3;
 		minSpeed = 7;
 		invCtrl = false;
-		angleCtrl = 9;
+		angleCtrl = 5;
 	}
 	
 	function mode3()
@@ -70,7 +70,7 @@
 		maxSpeed = 3;
 		minSpeed = 7;
 		invCtrl = true;
-		angleCtrl = 9;
+		angleCtrl = 5;
 	}
 	
 	var tol = 0;
@@ -132,7 +132,7 @@
  		if (beta < -4) pos = 0;
 		else if (beta > 3) pos = 7
 		else pos = beta + 4;
-		if (invCtrl) beta = 7 - beta;
+		if (invCtrl) pos = 7 - pos;
 	}
 	
 	function handleKeyPress(event)
