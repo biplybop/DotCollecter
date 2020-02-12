@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+</head>
+<body onload="init()">
+<script>
+
+	var beta = 0;	//gyro reading
+	
+	var pos = 0;	//gyro dot position
+	
+	var size = 20;	//dot size
+	var originX = 0;//dot matrix position
+	var originY = 0;//dot matrix position
+	
+	var dots = new Array();	//all the dots
+	
+	var timeDiff = 50;
+	var genInterv = 50;//default difficulity
+	var maxSpeed = 10;
+	var minSpeed = 10;
+	var invCtrl = false;
+	var angleCtrl = 5;
+	
+	function mode0()
+	{
+		timeDiff = 50;
+		genInterv = 30;
+		maxSpeed = 8;
+		minSpeed = 10;
+		invCtrl = false;
+		angleCtrl = 5;
+	}
+	
+	function mode0r()
+	{
+		timeDiff = 50;
+		genInterv = 30;
+		maxSpeed = 8;
+		minSpeed = 10;
+		invCtrl = true;
+		angleCtrl = 5;
+	}
+	
+	function mode1()
+	{
+		timeDiff = 30;
+		genInterv = 30;
+		maxSpeed = 5;
+		minSpeed = 10;
+		invCtrl = false;
+		angleCtrl = 5;
+	}
+	
+	function mode2()
+	{
+		timeDiff = 15;
+		genInterv = 15;
+		maxSpeed = 3;
+		minSpeed = 7;
+		invCtrl = false;
+		angleCtrl = 9;
+	}
+	
+	function mode3()
+	{
+		timeDiff = 15;
+		genInterv = 15;
+		maxSpeed = 3;
+		minSpeed = 7;
+		invCtrl = true;
+		angleCtrl = 9;
+	}
+	
+	var tol = 0;
+	var hit = 0;
+	
+	function init() 
+	{
+		setSize();			//set dot para
+		myGameArea.start();	//init gamearea
+		createBackGround();	//draw bg
+	}
+	
+	function setSize()
+	{
+		this.y = window.screen.availHeight / 10;
+		this.x = window.screen.availWidth / 10;
+		if (this.x > this.y) size = this.y;
+		else size = this.x;
+	    originX = window.screen.availWidth / 2 - 3.5 * size;
+	    originY = window.screen.availHeight / 2 - 3.5 * size;
+	}
+	
+	function onClick() 
+	{
+    	if (typeof DeviceOrientationEvent.requestPermission === 'function')
+		{
+      		DeviceOrientationEvent.requestPermission()
+        		.then(permissionState => {
+          			if (permissionState === 'granted') 		//ios 13+, accepted
+					{
+             		
+			  			myGameArea.startGame();				//start refreshing
+			  			dotAtBottom = new dotsAtBottom();	//create gyro dot obj
+          			}
+		  			else									//ios 13+, rejected
+					{
+				  		alert("Gyroscope Access Denied");
+					}
+        		})
+        		.catch(console.error);
+    	} 
+		else 
+		{
+      		//not ios 13
+			myGameArea.startGame();							//start refreshing
+			dotAtBottom = new dotsAtBottom();				//create gyro dot obj
+    	}		
+    }
+	
+	function getReadings()
+	{
+		window.addEventListener("deviceorientation", handleOrientation, true);
+		document.addEventListener("keydown", handleKeyPress, true);
+	}
+	
+    function handleOrientation(event) 
+	{
+  		beta = Math.round(event.beta / angleCtrl);
+ 		if (beta < -4) pos = 0;
+		else if (beta > 3) pos = 7
+		else pos = beta + 4;
+		if (invCtrl) beta = 7 - beta;
+	}
+	
+	function handleKeyPress(event)
+	{
+		if (event.keyCode == 40)
+		{
+			if (pos < 7) pos = pos + 1;
+		}
+		if (event.keyCode == 38)
+		{
+			if (pos > 0) pos = pos - 1;
+		}
+	}
+	
+	function drawCirc(x, y, color)
+	{
+		ctx = myGameArea.context;
+		ctx.beginPath();
+		ctx.arc(originX + x * size, originY + y * size, size / 2, 0, 2 * Math.PI, false);
+		ctx.fillStyle = color;
+    	ctx.fill();
+	}
+	
+	function createBackGround()
+	{
+		for (i = 0; i <= 7; i = i + 1) for (j = 0; j <= 7 ; j = j + 1) drawCirc(i,j,"gray");
+	}
+	
+	function dotsAtBottom()
+	{
+		this.pos = pos;
+		this.update = function()
+		{
+			this.pos = pos;
+			drawCirc(0, this.pos, "black");
+		}
+	}
+
+	var myGameArea = {
+    canvas : document.createElement("canvas"),
+    start : function() {
+        this.canvas.width = window.screen.availWidth;
+        this.canvas.height = window.screen.availHeight;
+        this.context = this.canvas.getContext("2d");
+        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+	},
+	startGame : function() {
+        this.frameNo = 0;
+        this.interval = setInterval(updateGameArea, 100);},
+    clear : function() {
+        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);}
+	}
+
+	function updateGameArea() 
+	{
+		getReadings();
+    	myGameArea.clear();
+    	myGameArea.frameNo += 1;
+		//document.getElementById('para').innerHTML = beta;
+		createBackGround();
+    	dotAtBottom.update();
+		if (myGameArea.frameNo % genInterv == 0) dotsGen(); 
+		updateDots();
+		document.getElementById('number').innerHTML = tol;
+		document.getElementById('score').innerHTML = hit;	
+	}
+	
+	function everyinterval(n) 
+	{
+    	if ((myGameArea.frameNo / n) % 1 == 0) {return true;}
+    	return false;
+	}
+	
+	function dotsFalling(colu,spee)
+	{
+		this.pos = 7;
+		this.col = colu;
+		this.speed = spee;
+		this.timer = spee;
+		this.update = function()
+		{
+			drawCirc(this.pos, this.col, "black");
+			if (this.timer <= 0) 
+			{
+				this.pos = this.pos - 1;
+				this.timer = this.speed;
+			}
+			else this.timer = this.timer - 1;
+		}
+	}
+	
+	function getRandomInt(min, max)
+	{
+  		min = Math.ceil(min);
+  		max = Math.floor(max);
+  		return Math.floor(Math.random() * (max - min)) + min;
+	}
+	
+	function dotsGen()
+	{
+		var t = new Array;
+		var newCol = getRandomInt(0,7);
+		var newSpeed = getRandomInt(maxSpeed,minSpeed);										//difficulty
+		dots.forEach(element => t.push(element.pos * element.speed));
+		if (t.includes(7 * newSpeed))
+		{
+			return null;
+		}
+		newDot = new dotsFalling(newCol, newSpeed);
+		dots.push(newDot);
+		tol = tol + 1;
+	}
+	
+	function updateDots()
+	{
+		var newDots = new Array;
+		for (i = 0; i < dots.length; i = i + 1)
+		{
+			dots[i].update();
+      		if(dots[i].pos > 0)
+			{
+				newDots.push(dots[i]);
+				drawCirc(dots[i].pos,dots[i].col,"black");
+			}
+			else 
+			{
+				if (dots[i].col == pos) hit = hit + 1;
+			}
+		}
+		dots = newDots;
+	}
+	
+
+</script>
+<br>
+	<div>
+		<p>choose a mode</p>
+<button type="button" onclick="mode0()">Vanilla</button>
+<button type="button" onclick="mode1()">Vinegar</button>
+<button type="button" onclick="mode2()">Vodka</button>
+<button type="button" onclick="mode3()">VeganBurger</button>
+<button type="button" onclick="mode0r()">&#592;ll&#7433;u&#592;&#923;</button>
+		<p>then press start</p>
+<button type="button" onclick="onClick()">Start!</button>
+	<p>Number of dots appeared: <ins id = "number">null</ins></p>
+	<p>Number of dots collected: <ins id = "score">null</ins></p>
+		</div>
+	<p>tilt your device or press up/down on keyboard to move the collector</p>
+</body>
+</html>
